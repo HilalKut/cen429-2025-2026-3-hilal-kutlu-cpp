@@ -1,6 +1,6 @@
 #include "digitaljournal.h"
 #include "SecurityUtils.h"
-#include "DatabaseManager.h" // DatabaseManager'ı dahil etmeyi unutmayın
+// #include "DatabaseManager.h" // Bu, digitaljournal.h içinde zaten include edildi. Tekrar gerek yok.
 #include <iostream>
 #include <limits>
 #include <iomanip>
@@ -69,10 +69,8 @@ void DigitalJournalApp::secureClearMemory(void* ptr, size_t size) {
 }
 
 // --- Constructor & Destructor ---
-
-DigitalJournalApp::DigitalJournalApp() : loggedIn(false) {
-    // Veritabanı yöneticisini başlat
-    dbManager = std::make_unique<DatabaseManager>("journal.db");
+DigitalJournalApp::DigitalJournalApp(const std::string& dbPath) : loggedIn(false) {
+    dbManager = std::make_unique<DatabaseManager>(dbPath);
     if (!dbManager->open()) {
         std::cerr << "Kritik hata: Veritabani baslatilamadi." << std::endl;
         exit(EXIT_FAILURE);
@@ -89,7 +87,7 @@ DigitalJournalApp::~DigitalJournalApp() {
 }
 
 
-// --- YENİLENMİŞ VERİTABANI TABANLI FONKSİYONLAR ---
+// --- VERİTABANI TABANLI FONKSİYONLAR ---
 
 bool DigitalJournalApp::registerUser(const std::string& username, const std::string& password) {
     User tempUser;
@@ -114,7 +112,6 @@ bool DigitalJournalApp::registerUser(const std::string& username, const std::str
 
 bool DigitalJournalApp::loginUser(const std::string& username, const std::string& password) {
     User tempUser;
-    // DÜZELTME: Eski loadUserData yerine dbManager->loadUser kullanılıyor.
     if (!dbManager->loadUser(username, tempUser)) {
         std::cout << "Kullanici adi veya parola hatali." << std::endl;
         return false;
@@ -124,7 +121,6 @@ bool DigitalJournalApp::loginUser(const std::string& username, const std::string
     if (hashedPasswordAttempt == tempUser.passwordHash) {
         loggedIn = true;
         currentUser = tempUser;
-        // currentUserFilePath artık kullanılmıyor.
 
         std::vector<char> msg = {
             static_cast<char>('G' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('r' ^ 0xAA),
@@ -158,9 +154,7 @@ bool DigitalJournalApp::changePassword(const std::string& oldPassword, const std
     std::string newSalt = generateSalt();
     std::string newPasswordHash = hashPassword(newPassword, newSalt);
 
-    // DÜZELTME: Eski saveUserData yerine dbManager->updateUserPassword kullanılıyor.
     if (dbManager->updateUserPassword(currentUser.username, newSalt, newPasswordHash)) {
-        // Bellekteki mevcut kullanıcı bilgilerini de güncelle
         currentUser.salt = newSalt;
         currentUser.passwordHash = newPasswordHash;
         std::cout << "Parola basariyla degistirildi." << std::endl;
@@ -180,12 +174,10 @@ bool DigitalJournalApp::createEntry(const std::string& title, const std::string&
 
     Entry newEntry;
     newEntry.title = title;
-    // İçeriği veritabanına kaydetmeden ÖNCE şifrele
     newEntry.content = encryptData(content, currentUser.passwordHash);
     newEntry.mood = mood;
     newEntry.timestamp = time(nullptr);
 
-    // DÜZELTME: Eski saveEntries yerine dbManager->saveEntry kullanılıyor.
     if (dbManager->saveEntry(currentUser.username, newEntry)) {
         std::cout << "Gunluk girisi basariyla olusturuldu." << std::endl;
         return true;
@@ -195,13 +187,11 @@ bool DigitalJournalApp::createEntry(const std::string& title, const std::string&
 
 std::vector<Entry> DigitalJournalApp::viewAllEntries() const {
     if (!loggedIn) {
-        return {}; // Boş vektör döndür
+        return {};
     }
 
-    // DÜZELTME: Veritabanından şifreli girişleri yükle
     std::vector<Entry> entries = dbManager->loadEntries(currentUser.username);
 
-    // DÜZELTME: Gelen şifreli içeriği kullanıcıya göstermeden ÖNCE çöz
     for (auto& entry : entries) {
         entry.content = decryptData(entry.content, currentUser.passwordHash);
     }
@@ -215,7 +205,6 @@ void DigitalJournalApp::logoutUser() {
         secureClearString(currentUser.username);
         secureClearString(currentUser.passwordHash);
         secureClearString(currentUser.salt);
-        // currentUserFilePath artık kullanılmıyor.
     }
 }
 
@@ -223,7 +212,7 @@ bool DigitalJournalApp::isLoggedIn() const {
     return loggedIn;
 }
 
-// --- ARAMA, FİLTRELEME VE GÖRÜNTÜLEME (Bu fonksiyonlar viewAllEntries'i kullandığı için değişmedi) ---
+// --- ARAMA, FİLTRELEME VE GÖRÜNTÜLEME ---
 
 std::vector<Entry> DigitalJournalApp::searchEntries(const std::string& keyword) const {
     std::vector<Entry> allEntries = viewAllEntries();
@@ -271,7 +260,7 @@ void DigitalJournalApp::displayEntry(const Entry& entry) const {
     std::cout << "---------------------------------------" << std::endl;
 }
 
-// --- KULLANICI ARAYÜZÜ (Bu fonksiyonlar değişmedi) ---
+// --- KULLANICI ARAYÜZÜ ---
 
 void DigitalJournalApp::showLoginRegisterMenu() {
     int choice;

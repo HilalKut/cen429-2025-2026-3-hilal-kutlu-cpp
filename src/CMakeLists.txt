@@ -17,7 +17,10 @@ add_library(digitaljournal SHARED
 # Kütüphanenin başlık dosyalarını (header) nerede bulacağını belirtiyoruz.
 target_include_directories(digitaljournal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/digitaljournal/header
-    ${CMAKE_CURRENT_SOURCE_DIR}/security/header       # <-- BU SATIRI EKLEYİN
+    ${CMAKE_CURRENT_SOURCE_DIR}/security/header  
+    
+    ${CMAKE_BINARY_DIR}/_deps/googletest-src/googletest/include
+    ${CMAKE_BINARY_DIR}/_deps/googletest-src/googlemock/include 
 )
 
 # SQLite3 kütüphanesini bul

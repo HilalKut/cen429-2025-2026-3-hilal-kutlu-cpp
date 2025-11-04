@@ -6,6 +6,7 @@
 #include <ctime>
 #include <memory> // unique_ptr için
 #include "DatabaseManager.h" // <-- EKLENMESİ GEREKEN EN ÖNEMLİ SATIR
+#include "gtest/gtest.h"
 
 // Forward declaration of DatabaseManager is not needed since we include the full header
 // class DatabaseManager;
@@ -27,8 +28,15 @@ struct User {
 
 // Dijital Günlük Uygulamasının ana sınıfı
 class DigitalJournalApp {
+        // --- DOST TEST SINIFLARI ---
+    // Bu makrolar, aşağıdaki testlerin bu sınıfın private üyelerine
+    // erişmesine izin verir.
+    FRIEND_TEST(DigitalJournalAppTest, RegistrationSuccessAndFailure);
+    FRIEND_TEST(DigitalJournalAppTest, LoginSuccessAndFailure);
+    FRIEND_TEST(DigitalJournalAppTest, CreateAndRetrieveEntry);
+    
 public:
-    DigitalJournalApp();
+    explicit DigitalJournalApp(const std::string& dbPath);
     ~DigitalJournalApp();
 
     // Uygulamanın ana döngüsünü çalıştırır

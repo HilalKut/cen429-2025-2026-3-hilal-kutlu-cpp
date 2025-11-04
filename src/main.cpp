@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Uygulama ana mantığı başlar
-    DigitalJournalApp app;
+    DigitalJournalApp app("journal.db"); 
     app.run();
     
     return 0;
