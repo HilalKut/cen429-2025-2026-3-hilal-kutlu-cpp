@@ -1,6 +1,5 @@
 #include "digitaljournal.h"
 #include "SecurityUtils.h"
-// #include "DatabaseManager.h" // Bu, digitaljournal.h içinde zaten include edildi. Tekrar gerek yok.
 #include <iostream>
 #include <limits>
 #include <iomanip>

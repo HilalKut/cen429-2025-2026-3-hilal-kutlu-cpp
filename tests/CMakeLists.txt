@@ -25,7 +25,7 @@ target_link_libraries(
     gtest_main
 )
 
-# Test programının, gerekli başlık dosyalarını bulabilmesi için yolları ekle.
+# Test programının, gerekli başlık dosyalarını bulabilmesi için yolları ekledim.
 target_include_directories(
     digitaljournal_tests 
     PRIVATE
@@ -38,7 +38,6 @@ target_include_directories(
 # Testleri etkinleştir. Bu, CTest'in çalışması için gereklidir.
 enable_testing()
 
-# Oluşturduğumuz 'digitaljournal_tests' hedefini CTest'e bir test olarak ekle.
 # Bu komut, CTest'e testin nasıl çalıştırılacağını söyler.
 add_test(
     NAME DigitalJournalApp.UnitTests 

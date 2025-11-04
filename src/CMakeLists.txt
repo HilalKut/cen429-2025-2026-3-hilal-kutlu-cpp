@@ -1,5 +1,4 @@
 # DigitalJournal kütüphanesi (DLL için SHARED)
-# DigitalJournal kütüphanesi (DLL için SHARED)
 add_library(digitaljournal SHARED
     digitaljournal/src/digitaljournal.cpp
     digitaljournal/header/digitaljournal.h

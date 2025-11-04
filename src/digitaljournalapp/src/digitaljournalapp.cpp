@@ -1,5 +1,6 @@
 #include "digitaljournal.h"
-#include "SecurityUtils.h" // Güvenlik modülünü dahil et
+#include "SecurityUtils.h"
+// #include "DatabaseManager.h" // Bu, digitaljournal.h içinde zaten include edildi. Tekrar gerek yok.
 #include <iostream>
 #include <limits>
 #include <iomanip>
@@ -7,13 +8,11 @@
 #include <random>
 #include <algorithm>
 #include <memory>
-#include <map> // map başlık dosyası
+#include <map>
 
-// Basit bir karma algoritması ve salt üretimi için yardımcı fonksiyonlar
-// GERÇEK UYGULAMADA: Kriptografik olarak güvenli kütüphaneler (örn. OpenSSL, Crypto++) kullanılmalıdır.
-// Bu örnek, kavramı göstermek amaçlıdır.
+// --- Kriptografi Yardımcı Fonksiyonları ---
+
 std::string _simple_sha256_placeholder(const std::string& input) {
-    // Bu sadece bir yer tutucudur. Gerçek bir SHA256 algoritması burada olmalı.
     size_t hash = 0;
     for (char c : input) {
         hash = (hash * 31 + c);
@@ -26,7 +25,7 @@ std::string DigitalJournalApp::generateSalt() {
     std::mt19937 generator(rd());
     std::uniform_int_distribution<> distrib(0, 255);
     std::string salt_str;
-    for (int i = 0; i < 16; ++i) { // 16 byte salt
+    for (int i = 0; i < 16; ++i) {
         salt_str += static_cast<char>(distrib(generator));
     }
     return salt_str;
@@ -37,11 +36,9 @@ std::string DigitalJournalApp::hashPassword(const std::string& password, const s
     return _simple_sha256_placeholder(saltedPassword);
 }
 
-// Vize Rubriği: Veri Güvenliği (Depolama ve Kullanım Anında)
-// Basit bir XOR şifreleme. Gerçek uygulamada AES gibi güçlü bir algoritma kullanılmalıdır.
 std::string DigitalJournalApp::encryptData(const std::string& data, const std::string& key) const {
     std::string output = data;
-    if (key.empty()) return output; // Anahtar boşsa şifreleme yapma
+    if (key.empty()) return output;
     for (size_t i = 0; i < data.size(); ++i) {
         output[i] = data[i] ^ key[i % key.size()];
     }
@@ -57,7 +54,8 @@ std::string DigitalJournalApp::decryptData(const std::string& encryptedData, con
     return output;
 }
 
-// Vize Rubriği: Veri Güvenliği (Bellek Koruması)
+// --- Bellek Güvenliği ---
+
 void DigitalJournalApp::secureClearString(std::string& s) {
     std::fill(s.begin(), s.end(), 0);
     s.clear();
@@ -66,13 +64,18 @@ void DigitalJournalApp::secureClearString(std::string& s) {
 void DigitalJournalApp::secureClearMemory(void* ptr, size_t size) {
     if (ptr) {
         volatile unsigned char* p = static_cast<volatile unsigned char*>(ptr);
-        while (size--) {
-            *p++ = 0;
-        }
+        while (size--) *p++ = 0;
     }
 }
 
-DigitalJournalApp::DigitalJournalApp() : loggedIn(false) {}
+// --- Constructor & Destructor ---
+DigitalJournalApp::DigitalJournalApp(const std::string& dbPath) : loggedIn(false) {
+    dbManager = std::make_unique<DatabaseManager>(dbPath);
+    if (!dbManager->open()) {
+        std::cerr << "Kritik hata: Veritabani baslatilamadi." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
 
 DigitalJournalApp::~DigitalJournalApp() {
     if (loggedIn) {
@@ -83,105 +86,12 @@ DigitalJournalApp::~DigitalJournalApp() {
     secureClearString(currentUser.username);
 }
 
-bool DigitalJournalApp::loadUserData(const std::string& username, User& user) {
-    std::string userFilePath = "users/" + username + ".dat";
-    std::ifstream file(userFilePath, std::ios::binary);
-    if (!file.is_open()) {
-        return false;
-    }
 
-    std::getline(file, user.username);
-    std::getline(file, user.passwordHash);
-    std::getline(file, user.salt);
-
-    file.close();
-    return true;
-}
-
-bool DigitalJournalApp::saveUserData(const User& user) {
-#ifdef _WIN32
-    system("mkdir users");
-#else
-    system("mkdir -p users");
-#endif
-
-    std::string userFilePath = "users/" + user.username + ".dat";
-    std::ofstream file(userFilePath, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Hata: Kullanici verileri dosyasi kaydedilemiyor." << std::endl;
-        return false;
-    }
-
-    file << user.username << std::endl;
-    file << user.passwordHash << std::endl;
-    file << user.salt << std::endl;
-
-    file.close();
-    return true;
-}
-
-bool DigitalJournalApp::loadEntries(const std::string& username, std::vector<Entry>& entries) const {
-    std::string entriesFilePath = "entries/" + username + "_entries.dat";
-    std::ifstream file(entriesFilePath, std::ios::binary);
-    if (!file.is_open()) {
-        return false; // Henüz hiç giriş yoksa bu normal bir durum.
-    }
-
-    // Geliştirilmiş Veri Güvenliği: Her kullanıcının verisi kendi parola hash'i ile şifrelenir.
-    std::string user_key = currentUser.passwordHash;
-
-    entries.clear();
-    Entry entry;
-    std::string line;
-    while (std::getline(file, line)) { // title
-        entry.title = line;
-        if (!std::getline(file, line)) break; // content
-        entry.content = decryptData(line, user_key); // Şifreli içeriği çöz
-        if (!std::getline(file, line)) break; // mood
-        entry.mood = line;
-        if (!std::getline(file, line)) break; // timestamp
-        try {
-            entry.timestamp = std::stoll(line);
-        } catch (const std::exception& e) {
-            continue;
-        }
-        entries.push_back(entry);
-    }
-
-    file.close();
-    return true;
-}
-
-bool DigitalJournalApp::saveEntries(const std::string& username, const std::vector<Entry>& entries) const {
-#ifdef _WIN32
-    system("mkdir entries");
-#else
-    system("mkdir -p entries");
-#endif
-
-    std::string entriesFilePath = "entries/" + username + "_entries.dat";
-    std::ofstream file(entriesFilePath, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Hata: Gunluk girisleri dosyasi kaydedilemiyor." << std::endl;
-        return false;
-    }
-
-    std::string user_key = currentUser.passwordHash;
-
-    for (const auto& entry : entries) {
-        file << entry.title << std::endl;
-        file << encryptData(entry.content, user_key) << std::endl; // İçeriği şifrele
-        file << entry.mood << std::endl;
-        file << entry.timestamp << std::endl;
-    }
-
-    file.close();
-    return true;
-}
+// --- VERİTABANI TABANLI FONKSİYONLAR ---
 
 bool DigitalJournalApp::registerUser(const std::string& username, const std::string& password) {
     User tempUser;
-    if (loadUserData(username, tempUser)) {
+    if (dbManager->loadUser(username, tempUser)) {
         std::cout << "Bu kullanici adi zaten mevcut." << std::endl;
         return false;
     }
@@ -191,7 +101,7 @@ bool DigitalJournalApp::registerUser(const std::string& username, const std::str
     newUser.salt = generateSalt();
     newUser.passwordHash = hashPassword(password, newUser.salt);
 
-    if (saveUserData(newUser)) {
+    if (dbManager->saveUser(newUser)) {
         std::cout << "Kayit basarili. Lutfen giris yapin." << std::endl;
         secureClearString(newUser.passwordHash);
         secureClearString(newUser.salt);
@@ -202,7 +112,7 @@ bool DigitalJournalApp::registerUser(const std::string& username, const std::str
 
 bool DigitalJournalApp::loginUser(const std::string& username, const std::string& password) {
     User tempUser;
-    if (!loadUserData(username, tempUser)) {
+    if (!dbManager->loadUser(username, tempUser)) {
         std::cout << "Kullanici adi veya parola hatali." << std::endl;
         return false;
     }
@@ -211,43 +121,27 @@ bool DigitalJournalApp::loginUser(const std::string& username, const std::string
     if (hashedPasswordAttempt == tempUser.passwordHash) {
         loggedIn = true;
         currentUser = tempUser;
-        currentUserFilePath = "entries/" + username + "_entries.dat";
-        
-        // Vize Rubriği: Kod Sertleştirme (String Gizleme)
-        std::vector<char> msg = {('G'^0xAA), ('i'^0xAA), ('r'^0xAA), ('i'^0xAA), ('s'^0xAA), (' '^0xAA), ('b'^0xAA), ('a'^0xAA), ('s'^0xAA), ('a'^0xAA), ('r'^0xAA), ('i'^0xAA), ('l'^0xAA), ('i'^0xAA), ('.' ^0xAA)};
+
+        std::vector<char> msg = {
+            static_cast<char>('G' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('r' ^ 0xAA),
+            static_cast<char>('i' ^ 0xAA), static_cast<char>('s' ^ 0xAA), static_cast<char>(' ' ^ 0xAA),
+            static_cast<char>('b' ^ 0xAA), static_cast<char>('a' ^ 0xAA), static_cast<char>('s' ^ 0xAA),
+            static_cast<char>('a' ^ 0xAA), static_cast<char>('r' ^ 0xAA), static_cast<char>('i' ^ 0xAA),
+            static_cast<char>('l' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('.' ^ 0xAA)
+        };
         std::cout << SecurityUtils::getObfuscatedString(msg) << " Hos geldiniz, " << currentUser.username << "!" << std::endl;
 
         secureClearString(hashedPasswordAttempt);
-        secureClearString(tempUser.passwordHash);
-        secureClearString(tempUser.salt);
         return true;
     } else {
         std::cout << "Kullanici adi veya parola hatali." << std::endl;
         secureClearString(hashedPasswordAttempt);
-        secureClearString(tempUser.passwordHash);
-        secureClearString(tempUser.salt);
         return false;
-    }
-}
-
-void DigitalJournalApp::logoutUser() {
-    if (loggedIn) {
-        std::cout << "Cikis yapiliyor..." << std::endl;
-        loggedIn = false;
-        secureClearString(currentUser.username);
-        secureClearString(currentUser.passwordHash);
-        secureClearString(currentUser.salt);
-        currentUserFilePath.clear();
-    } else {
-        std::cout << "Zaten cikis yapmis durumdasiniz." << std::endl;
     }
 }
 
 bool DigitalJournalApp::changePassword(const std::string& oldPassword, const std::string& newPassword) {
-    if (!loggedIn) {
-        std::cout << "Bu islemi yapmak icin giris yapmalisiniz." << std::endl;
-        return false;
-    }
+    if (!loggedIn) return false;
 
     std::string oldPasswordHashAttempt = hashPassword(oldPassword, currentUser.salt);
     if (oldPasswordHashAttempt != currentUser.passwordHash) {
@@ -260,10 +154,9 @@ bool DigitalJournalApp::changePassword(const std::string& oldPassword, const std
     std::string newSalt = generateSalt();
     std::string newPasswordHash = hashPassword(newPassword, newSalt);
 
-    currentUser.salt = newSalt;
-    currentUser.passwordHash = newPasswordHash;
-
-    if (saveUserData(currentUser)) {
+    if (dbManager->updateUserPassword(currentUser.username, newSalt, newPasswordHash)) {
+        currentUser.salt = newSalt;
+        currentUser.passwordHash = newPasswordHash;
         std::cout << "Parola basariyla degistirildi." << std::endl;
         secureClearString(newPasswordHash);
         secureClearString(newSalt);
@@ -276,28 +169,16 @@ bool DigitalJournalApp::changePassword(const std::string& oldPassword, const std
     }
 }
 
-bool DigitalJournalApp::isLoggedIn() const {
-    return loggedIn;
-}
-
 bool DigitalJournalApp::createEntry(const std::string& title, const std::string& content, const std::string& mood) {
-    if (!loggedIn) {
-        std::cout << "Gunluk girisi olusturmak icin giris yapmalisiniz." << std::endl;
-        return false;
-    }
-
-    std::vector<Entry> entries;
-    loadEntries(currentUser.username, entries);
+    if (!loggedIn) return false;
 
     Entry newEntry;
     newEntry.title = title;
-    newEntry.content = content;
+    newEntry.content = encryptData(content, currentUser.passwordHash);
     newEntry.mood = mood;
     newEntry.timestamp = time(nullptr);
 
-    entries.push_back(newEntry);
-
-    if (saveEntries(currentUser.username, entries)) {
+    if (dbManager->saveEntry(currentUser.username, newEntry)) {
         std::cout << "Gunluk girisi basariyla olusturuldu." << std::endl;
         return true;
     }
@@ -305,14 +186,33 @@ bool DigitalJournalApp::createEntry(const std::string& title, const std::string&
 }
 
 std::vector<Entry> DigitalJournalApp::viewAllEntries() const {
-    std::vector<Entry> entries;
     if (!loggedIn) {
-        std::cout << "Gunlukleri gormek icin giris yapmalisiniz." << std::endl;
-        return entries;
+        return {};
     }
-    loadEntries(currentUser.username, entries);
+
+    std::vector<Entry> entries = dbManager->loadEntries(currentUser.username);
+
+    for (auto& entry : entries) {
+        entry.content = decryptData(entry.content, currentUser.passwordHash);
+    }
     return entries;
 }
+
+void DigitalJournalApp::logoutUser() {
+    if (loggedIn) {
+        std::cout << "Cikis yapiliyor..." << std::endl;
+        loggedIn = false;
+        secureClearString(currentUser.username);
+        secureClearString(currentUser.passwordHash);
+        secureClearString(currentUser.salt);
+    }
+}
+
+bool DigitalJournalApp::isLoggedIn() const {
+    return loggedIn;
+}
+
+// --- ARAMA, FİLTRELEME VE GÖRÜNTÜLEME ---
 
 std::vector<Entry> DigitalJournalApp::searchEntries(const std::string& keyword) const {
     std::vector<Entry> allEntries = viewAllEntries();
@@ -351,17 +251,16 @@ std::vector<Entry> DigitalJournalApp::filterEntriesByMood(const std::string& moo
 void DigitalJournalApp::displayEntry(const Entry& entry) const {
     std::cout << "---------------------------------------" << std::endl;
     std::cout << "Baslik: " << entry.title << std::endl;
-
     char timeBuffer[80];
-    struct tm* tm_info;
-    tm_info = localtime(&entry.timestamp);
+    struct tm* tm_info = localtime(&entry.timestamp);
     strftime(timeBuffer, 80, "%Y-%m-%d %H:%M:%S", tm_info);
     std::cout << "Tarih:  " << timeBuffer << std::endl;
-
     std::cout << "Duygu:  " << entry.mood << std::endl;
     std::cout << "Icerik: " << entry.content << std::endl;
     std::cout << "---------------------------------------" << std::endl;
 }
+
+// --- KULLANICI ARAYÜZÜ ---
 
 void DigitalJournalApp::showLoginRegisterMenu() {
     int choice;
@@ -372,7 +271,6 @@ void DigitalJournalApp::showLoginRegisterMenu() {
         std::cout << "3. Cikis" << std::endl;
         std::cout << "Seciminiz: ";
         std::cin >> choice;
-
         if (std::cin.fail()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -380,7 +278,6 @@ void DigitalJournalApp::showLoginRegisterMenu() {
             continue;
         }
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
         switch (choice) {
             case 1: handleLogin(); break;
             case 2: handleRegister(); break;
@@ -396,7 +293,6 @@ void DigitalJournalApp::handleLogin() {
     std::getline(std::cin, username);
     std::cout << "Parola: ";
     std::getline(std::cin, password);
-
     if (!loginUser(username, password)) {
         std::cout << "Giris basarisiz. Lutfen tekrar deneyin." << std::endl;
     }
@@ -413,7 +309,16 @@ void DigitalJournalApp::handleRegister() {
     std::getline(std::cin, confirmPassword);
 
     if (password != confirmPassword) {
-        std::cout << "Parolalar eslesmiyor." << std::endl;
+        std::vector<char> msg = {
+            static_cast<char>('P' ^ 0xAA), static_cast<char>('a' ^ 0xAA), static_cast<char>('r' ^ 0xAA),
+            static_cast<char>('o' ^ 0xAA), static_cast<char>('l' ^ 0xAA), static_cast<char>('a' ^ 0xAA),
+            static_cast<char>('l' ^ 0xAA), static_cast<char>('a' ^ 0xAA), static_cast<char>('r' ^ 0xAA),
+            static_cast<char>(' ' ^ 0xAA), static_cast<char>('e' ^ 0xAA), static_cast<char>('s' ^ 0xAA),
+            static_cast<char>('l' ^ 0xAA), static_cast<char>('e' ^ 0xAA), static_cast<char>('s' ^ 0xAA),
+            static_cast<char>('m' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('y' ^ 0xAA),
+            static_cast<char>('o' ^ 0xAA), static_cast<char>('r' ^ 0xAA), static_cast<char>('.' ^ 0xAA)
+        };
+        std::cout << SecurityUtils::getObfuscatedString(msg) << std::endl;
         secureClearString(password);
         secureClearString(confirmPassword);
         return;
@@ -440,7 +345,6 @@ void DigitalJournalApp::showMainMenu() {
         std::cout << "8. Cikis Yap" << std::endl;
         std::cout << "Seciminiz: ";
         std::cin >> choice;
-
         if (std::cin.fail()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -448,7 +352,6 @@ void DigitalJournalApp::showMainMenu() {
             continue;
         }
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
         switch (choice) {
             case 1: handleCreateEntry(); break;
             case 2: handleViewEntries(); break;
@@ -471,7 +374,6 @@ void DigitalJournalApp::handleCreateEntry() {
     std::getline(std::cin, content);
     std::cout << "Duygu (Orn: Happy, Sad, Stressed, Relaxed): ";
     std::getline(std::cin, mood);
-
     createEntry(title, content, mood);
 }
 
@@ -490,7 +392,6 @@ void DigitalJournalApp::handleSearchEntries() {
     std::string keyword;
     std::cout << "Aranacak Anahtar Kelime: ";
     std::getline(std::cin, keyword);
-
     std::vector<Entry> foundEntries = searchEntries(keyword);
     if (foundEntries.empty()) {
         std::cout << "Anahtar kelimeyle eslesen giris bulunamadi." << std::endl;
@@ -505,11 +406,9 @@ void DigitalJournalApp::handleFilterEntriesByDate() {
     std::cout << "Baslangic Tarihi (YYYY-MM-DD HH:MM:SS): ";
     std::string startDateStr;
     std::getline(std::cin, startDateStr);
-
     std::cout << "Bitis Tarihi (YYYY-MM-DD HH:MM:SS): ";
     std::string endDateStr;
     std::getline(std::cin, endDateStr);
-
     struct tm tm_start = {0}, tm_end = {0};
     std::istringstream ss_start(startDateStr);
     ss_start >> std::get_time(&tm_start, "%Y-%m-%d %H:%M:%S");
@@ -517,17 +416,14 @@ void DigitalJournalApp::handleFilterEntriesByDate() {
         std::cout << "Gecersiz baslangic tarihi formati." << std::endl;
         return;
     }
-
     std::istringstream ss_end(endDateStr);
     ss_end >> std::get_time(&tm_end, "%Y-%m-%d %H:%M:%S");
     if (ss_end.fail()) {
         std::cout << "Gecersiz bitis tarihi formati." << std::endl;
         return;
     }
-
     time_t startDate = mktime(&tm_start);
     time_t endDate = mktime(&tm_end);
-
     std::vector<Entry> filteredEntries = filterEntriesByDate(startDate, endDate);
     if (filteredEntries.empty()) {
         std::cout << "Belirtilen tarihler arasinda giris bulunamadi." << std::endl;
@@ -542,7 +438,6 @@ void DigitalJournalApp::handleFilterEntriesByMood() {
     std::string mood;
     std::cout << "Filtrelemek istediginiz Duygu (Orn: Happy, Sad, Stressed, Relaxed): ";
     std::getline(std::cin, mood);
-
     std::vector<Entry> filteredEntries = filterEntriesByMood(mood);
     if (filteredEntries.empty()) {
         std::cout << "Bu duyguyla eslesen giris bulunamadi." << std::endl;
@@ -584,28 +479,19 @@ void DigitalJournalApp::handleViewMoodHistory() {
         std::cout << "Henuz gunluk girisi bulunmuyor, duygu gecmisi goruntulenemiyor." << std::endl;
         return;
     }
-
-    // std::map kullanarak her bir duygunun kaç kez tekrarlandığını sayalım.
     std::map<std::string, int> moodCounts;
     for (const auto& entry : allEntries) {
         moodCounts[entry.mood]++;
     }
-
     std::cout << "\n--- Duygu Gecmisi ---" << std::endl;
-    if (moodCounts.empty()) {
-        std::cout << "Gosterilecek duygu gecmisi yok." << std::endl;
-    } else {
-        for (const auto& pair : moodCounts) {
-            std::cout << pair.first << ": " << pair.second << " kez" << std::endl;
-        }
+    for (const auto& pair : moodCounts) {
+        std::cout << pair.first << ": " << pair.second << " kez" << std::endl;
     }
     std::cout << "----------------------" << std::endl;
 }
 
 void DigitalJournalApp::run() {
     showLoginRegisterMenu();
-
-    // Kullanıcı başarıyla giriş yaptıysa ana menüyü göster.
     if (isLoggedIn()) {
         showMainMenu();
     }

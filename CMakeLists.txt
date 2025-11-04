@@ -14,7 +14,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # DLL için gerekli
+set(CMAKE_POSITION_INDEPENDENT_CODE ON) 
 
 # Bu satırları ekleyelim veya güncelleyelim:
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin) # Çalıştırılabilir dosyalar (exe) buraya gitsin

@@ -142,7 +142,7 @@ std::vector<Entry> DatabaseManager::loadEntries(const std::string& username) {
             entry.timestamp = sqlite3_column_int64(stmt, 3);
             entries.push_back(entry);
         }
-        sqlite3_finalize(stmt); // DÜZELTME: finalize() if bloğunun içine taşındı.
+        sqlite3_finalize(stmt); 
     }
     return entries;
 }

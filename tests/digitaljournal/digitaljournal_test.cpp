@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "digitaljournal.h" // Test edilecek sınıfımız
-#include <cstdio>           // remove() fonksiyonu ile test veritabanını silmek için
-#include <fstream>          // Dosyanın varlığını kontrol etmek için
+#include "digitaljournal.h" 
+#include <cstdio>           
+#include <fstream>          
 
 
 // --- Test Fixture ---
