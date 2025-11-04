@@ -11,15 +11,21 @@ add_library(digitaljournal SHARED
 
     security/src/SecureCommunicator.cpp
     security/header/SecureCommunicator.h
+
+    security/header/colors.h
+    utils/utils.cpp 
+
 )
 
 # Kütüphanenin başlık dosyalarını (header) nerede bulacağını belirtiyoruz.
 target_include_directories(digitaljournal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/digitaljournal/header
     ${CMAKE_CURRENT_SOURCE_DIR}/security/header  
-    
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+
     ${CMAKE_BINARY_DIR}/_deps/googletest-src/googletest/include
     ${CMAKE_BINARY_DIR}/_deps/googletest-src/googlemock/include 
+    ${CMAKE_CURRENT_SOURCE_DIR}  
 )
 
 # SQLite3 kütüphanesini bul
