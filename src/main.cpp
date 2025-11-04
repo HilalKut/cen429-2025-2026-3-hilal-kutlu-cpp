@@ -1,43 +1,10 @@
 #include "digitaljournal/header/digitaljournal.h"
 #include "security/header/SecurityUtils.h"
-#include "security/header/colors.h" 
+#include "ui/header/colors.h" 
 #include <iostream>
 #include <string> 
 #include <sstream> 
-
-// Platforma göre ekranı temizleyen fonksiyon
-void clearScreen() {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
-}
-
-// Belirtilen metni bir başlık kutusu içinde yazdıran fonksiyon
-void printHeader(const std::string& title) {
-    std::cout << "========================================" << std::endl;
-    std::cout << "    " << title << std::endl;
-    std::cout << "========================================" << std::endl << std::endl;
-}
-
-// Kullanıcıdan belirli bir aralıkta geçerli bir tamsayı alan fonksiyon
-int getValidatedInput(int min, int max) {
-    std::string line;
-    int choice;
-    while (true) {
-        std::cout << CYAN << ">> Seciminiz: " << RESET;
-        std::getline(std::cin, line);
-        
-        std::stringstream ss(line);
-        if (ss >> choice && ss.eof()) { // Satırın tamamı bir sayı mı diye kontrol et
-            if (choice >= min && choice <= max) {
-                return choice; // Geçerli giriş
-            }
-        }
-        std::cout << RED << "Gecersiz giris. Lutfen " << min << " ile " << max << " arasinda bir sayi girin." << RESET << std::endl;
-    }
-}
+#include "ui/header/UIUtils.h"
 
 int main(int argc, char* argv[]) {
     // --- GÜVENLİK KATMANI 1: RASP (Runtime Application Self-Protection) ---

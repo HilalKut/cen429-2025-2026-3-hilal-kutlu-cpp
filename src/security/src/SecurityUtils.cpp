@@ -84,7 +84,7 @@ std::string SecurityUtils::calculateSHA256(const std::string& filePath) {
 }
 
 void SecurityUtils::verifyAppIntegrity(const char* appPath) {
-    const std::string originalHash = "c2ab638347c4b80edf6457aa8ce255dd1dc6c7c6dd15b3dfe6f35f7db6f0b57c";
+    const std::string originalHash = "4c3f9b56a023bc1b4165f25c0b8008b77b987fa01e547f0d01aecb0ea839d858";
 
     std::string currentHash = calculateSHA256(appPath);
 

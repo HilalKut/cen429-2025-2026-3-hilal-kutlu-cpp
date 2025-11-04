@@ -1,9 +1,9 @@
-#include "security/header/colors.h"
-#include "utils/utils.h"
+#include "UIUtils.h"
+#include "colors.h" // Renkleri de dahil edelim
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <cstdlib>
+#include <limits>
 
 void clearScreen() {
 #ifdef _WIN32
@@ -32,7 +32,6 @@ int getValidatedInput(int min, int max) {
                 return choice;
             }
         }
-        std::cout << RED << "Gecersiz giris. Lutfen " << min << " ile " << max
-                  << " arasinda bir sayi girin." << RESET << std::endl;
+        std::cout << RED << "Gecersiz giris. Lutfen " << min << " ile " << max << " arasinda bir sayi girin." << RESET << std::endl;
     }
 }

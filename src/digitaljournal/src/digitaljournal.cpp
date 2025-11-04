@@ -1,7 +1,7 @@
 #include "digitaljournal.h"
 #include "SecurityUtils.h"
-#include "colors.h" // Renkleri dahil et
-#include "utils/utils.h"
+#include "ui/header/colors.h" 
+#include "ui/header/UIUtils.h"
 
 #include <iostream>
 #include <limits>

@@ -12,8 +12,10 @@ add_library(digitaljournal SHARED
     security/src/SecureCommunicator.cpp
     security/header/SecureCommunicator.h
 
-    security/header/colors.h
-    utils/utils.cpp 
+    ui/header/colors.h
+
+    ui/src/UIUtils.cpp
+    ui/header/UIUtils.h
 
 )
 
@@ -21,7 +23,7 @@ add_library(digitaljournal SHARED
 target_include_directories(digitaljournal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/digitaljournal/header
     ${CMAKE_CURRENT_SOURCE_DIR}/security/header  
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/header
 
     ${CMAKE_BINARY_DIR}/_deps/googletest-src/googletest/include
     ${CMAKE_BINARY_DIR}/_deps/googletest-src/googlemock/include 
