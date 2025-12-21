@@ -1,55 +1,21 @@
-/* src/digitaljournal/header/digitaljournal.h */
-
 #ifndef DIGITALJOURNAL_H
 #define DIGITALJOURNAL_H
 
 #include <string>
 #include <vector>
 #include <ctime>
-#include <memory> // unique_ptr için
-#include "DatabaseManager.h" // <-- EKLENMESİ GEREKEN EN ÖNEMLİ SATIR
+#include <memory>
 #include "Models.h"
-#include "gtest/gtest.h"
-#include "gtest/gtest_prod.h" 
+#include "DatabaseManager.h"
 #include "CryptoUtils.h"
 
-
-// Dijital Günlük Uygulamasının ana sınıfı
 class DigitalJournalApp {
-        // --- DOST TEST SINIFLARI ---
-    // Bu makrolar, aşağıdaki testlerin bu sınıfın private üyelerine
-    // erişmesine izin verir.
-    FRIEND_TEST(DigitalJournalAppTest, RegistrationSuccessAndFailure);
-    FRIEND_TEST(DigitalJournalAppTest, LoginSuccessAndFailure);
-    FRIEND_TEST(DigitalJournalAppTest, CreateAndRetrieveEntry);
-        // Birim Test Erişimi (Rubrik Maddesi: Birim Testi)
-    FRIEND_TEST(DigitalJournalAppTest, RegistrationAndLoginLogic);
-    FRIEND_TEST(DigitalJournalAppTest, EncryptionIntegrity);
-    
 public:
     explicit DigitalJournalApp(const std::string& dbPath);
     ~DigitalJournalApp();
-
-    // Uygulamanın ana döngüsünü çalıştırır
     void run();
 
-private:
-    // --- Üye Değişkenler ---
-    User currentUser;
-    bool loggedIn;
-    std::unique_ptr<DatabaseManager> dbManager; // Veritabanı yöneticisi
-
-    // --- Kriptografi Fonksiyonları ---
-    std::string generateSalt();
-    std::string hashPassword(const std::string& password, const std::string& salt);
-    std::string encryptData(const std::string& data, const std::string& key) const;
-    std::string decryptData(const std::string& encryptedData, const std::string& key) const;
-
-    // --- Bellek Güvenliği ---
-    void secureClearString(std::string& s);
-    void secureClearMemory(void* ptr, size_t size);
-
-    // --- Ana İşlevsellik ---
+    // --- TEST EDİLEBİLİR FONKSİYONLAR (PUBLIC YAPILDI) ---
     bool registerUser(const std::string& username, const std::string& password);
     bool loginUser(const std::string& username, const std::string& password);
     void logoutUser();
@@ -62,7 +28,20 @@ private:
     std::vector<Entry> filterEntriesByMood(const std::string& mood) const;
     void displayEntry(const Entry& entry) const;
 
-    // --- Kullanıcı Arayüzü Yardımcıları ---
+private:
+    User currentUser;
+    bool loggedIn;
+    std::unique_ptr<DatabaseManager> dbManager;
+
+    // Yardımcı İç Fonksiyonlar
+    std::string generateSalt();
+    std::string hashPassword(const std::string& password, const std::string& salt);
+    std::string encryptData(const std::string& data, const std::string& key) const;
+    std::string decryptData(const std::string& encryptedData, const std::string& key) const;
+    void secureClearString(std::string& s);
+    void secureClearMemory(void* ptr, size_t size);
+
+    // Arayüz Fonksiyonları
     void showMainMenu();
     void showLoginRegisterMenu();
     void handleLogin();
@@ -76,4 +55,4 @@ private:
     void handleViewMoodHistory();
 };
 
-#endif // DIGITALJOURNAL_H
+#endif
