@@ -1,3 +1,5 @@
+/* src/ui/header/colors.h */
+
 // colors.h
 
 #ifndef COLORS_H

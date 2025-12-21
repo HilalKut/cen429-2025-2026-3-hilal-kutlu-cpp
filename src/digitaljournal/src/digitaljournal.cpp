@@ -1,3 +1,5 @@
+/* src/digitaljournal/src/digitaljournal.cpp */
+
 #include "digitaljournal.h"
 #include "SecurityUtils.h"
 #include "ui/header/colors.h" 

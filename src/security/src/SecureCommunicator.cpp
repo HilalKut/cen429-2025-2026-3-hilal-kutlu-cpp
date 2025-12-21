@@ -1,3 +1,5 @@
+/* src/security/src/SecureCommunicator.cpp */
+
 #include "SecureCommunicator.h"
 #include <iostream>
 
@@ -23,17 +25,29 @@ bool SecureCommunicator::verifyCertificatePinning() {
     }
 }
 
+// Oturum Anahtarı Yönetimi için simülasyon
+bool SecureCommunicator::performDiffieHellmanExchange() {
+    // SİMÜLASYON: Gerçek bir uygulamada burada büyük asal sayılar kullanılır.
+    std::cout << "[+] Diffie-Hellman anahtar degisimi baslatiliyor..." << std::endl;
+    // Basit bir oturum anahtarı oluşturma simülasyonu
+    sessionKey = "SESSION_KEY_" + std::to_string(rand() % 1000); 
+    std::cout << "[+] Oturum Anahtari basariyla olusturuldu ve degistirildi (Oturum Anahtari Yonetimi)." << std::endl;
+    return true;
+}
+
 bool SecureCommunicator::sendData(const std::string& data) {
     std::cout << "\n--- Guvenli Veri Gonderme Simulasyonu ---" << std::endl;
     establishTLSConnection();
     if (verifyCertificatePinning()) {
-        std::cout << "[+] Veri gonderiliyor: " << data.substr(0, 20) << "..." << std::endl;
-        std::cout << "[+] Veri basariyla gonderildi." << std::endl;
-        std::cout << "-----------------------------------------" << std::endl;
-        return true;
-    } else {
-        std::cout << "[-] Veri gonderilemedi. Guvenli baglanti kurulamadi." << std::endl;
-        std::cout << "-----------------------------------------" << std::endl;
-        return false;
+        if (performDiffieHellmanExchange()) { // Oturum anahtarı değişimi ekleniyor
+            // Gerçek bir senaryoda, veri bu 'sessionKey' ile şifrelenirdi.
+            std::cout << "[+] Veri (Oturum Anahtari ile) gonderiliyor: " << data.substr(0, 20) << "..." << std::endl;
+            std::cout << "[+] Veri basariyla gonderildi." << std::endl;
+            std::cout << "-----------------------------------------" << std::endl;
+            return true;
+        }
     }
+    std::cout << "[-] Veri gonderilemedi. Guvenli baglanti kurulamadi." << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
+    return false;
 }

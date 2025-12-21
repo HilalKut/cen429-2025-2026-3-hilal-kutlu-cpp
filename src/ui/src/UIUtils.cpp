@@ -1,3 +1,5 @@
+/* src/ui/src/UIUtils.h */
+
 #include "UIUtils.h"
 #include "colors.h" // Renkleri de dahil edelim
 #include <iostream>

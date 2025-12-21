@@ -1,30 +1,22 @@
-cmake_minimum_required(VERSION 3.10)
-project(CEN429_DigitalJournalApp LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.14)
+project(DigitalJournalProject)
 
-# --- Code Coverage Ayarları ---
-if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
-    message(STATUS "Code coverage build enabled for Clang")
-    # -fprofile-instr-generate ve -fcoverage-mapping bayrakları,
-    # modern Clang'in kapsama verisi üretmesi için gereklidir.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping -O0 -g")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-instr-generate -fcoverage-mapping -O0 -g")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate")
-endif()
+set(CMAKE_CXX_STANDARD 14) # std::make_unique için gerekli
 
+# SQLite3 ve GTest paketlerini bul
+find_package(SQLite3 REQUIRED)
+find_package(GTest REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) 
+include_directories(src/models/header src/digitaljournal/header src/crypto/header src/security/header src/ui/header)
 
-# Bu satırları ekleyelim veya güncelleyelim:
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin) # Çalıştırılabilir dosyalar (exe) buraya gitsin
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Kütüphaneler (dll, so) buraya gitsin
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Arşivler (a) buraya gitsin
+# Kaynak dosyaları
+add_executable(DigitalJournalTests 
+    tests/DigitalJournalTests.cpp 
+    src/digitaljournal/src/digitaljournal.cpp 
+    src/digitaljournal/src/DatabaseManager.cpp
+    src/crypto/src/CryptoUtils.cpp
+    src/security/src/SecureUtils.cpp
+    src/ui/src/UIUtils.cpp
+)
 
-# --- Testleri Etkinleştirme ---
-# Bu komut, CMake'in testleri keşfetmesini ve ctest için
-# gerekli yapılandırma dosyalarını oluşturmasını sağlar.
-enable_testing()
-add_subdirectory(tests)
-# src ve tests alt dizinlerini dahil et
-add_subdirectory(src)
+target_link_libraries(DigitalJournalTests GTest::gtest_main SQLite3::SQLite3)

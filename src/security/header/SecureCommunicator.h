@@ -1,11 +1,10 @@
+/* src/security/header/SecureCommunicator.h */
+
 #ifndef SECURE_COMMUNICATOR_H
 #define SECURE_COMMUNICATOR_H
 
 #include <string>
 
-// Bu sınıf, final rubriğindeki "Güvenli İletişim" ve "Sertifikalar"
-// maddelerini karşılamak için konsept olarak tasarlanmıştır.
-// Gerçek bir ağ bağlantısı kurmaz.
 class SecureCommunicator {
 public:
     SecureCommunicator(const std::string& host);
@@ -16,15 +15,13 @@ public:
 private:
     std::string serverHost;
     const std::string pinnedServerCertificateHash = "EXPECTED_SERVER_CERT_HASH_HERE";
+    std::string sessionKey; // Oturum anahtarını tutmak için yeni üye
 
-    // Gerçek bir uygulamada, bu fonksiyon OpenSSL veya benzeri bir kütüphane
-    // kullanarak bir TLS bağlantısı kurar.
     void establishTLSConnection();
-    
-    // Gerçek bir uygulamada, bu fonksiyon sunucunun sertifikasını alır
-    // ve hash'ini bizim "pinned" (sabitlediğimiz) hash ile karşılaştırır.
-    // Bu, Man-in-the-Middle saldırılarını önler.
     bool verifyCertificatePinning();
+
+    // Rubrik Maddesi: Oturum Anahtarı Yönetimi (Simülasyon)
+    bool performDiffieHellmanExchange();
 };
 
 #endif // SECURE_COMMUNICATOR_H

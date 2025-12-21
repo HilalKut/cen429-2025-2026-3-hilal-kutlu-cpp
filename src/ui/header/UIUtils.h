@@ -1,3 +1,5 @@
+/* src/ui/header/UIUtils.h */
+
 #ifndef UI_UTILS_H
 #define UI_UTILS_H
 

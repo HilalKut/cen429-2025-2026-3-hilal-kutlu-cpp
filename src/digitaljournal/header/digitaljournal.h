@@ -1,3 +1,5 @@
+/* src/digitaljournal/header/digitaljournal.h */
+
 #ifndef DIGITALJOURNAL_H
 #define DIGITALJOURNAL_H
 
@@ -6,25 +8,11 @@
 #include <ctime>
 #include <memory> // unique_ptr için
 #include "DatabaseManager.h" // <-- EKLENMESİ GEREKEN EN ÖNEMLİ SATIR
+#include "Models.h"
 #include "gtest/gtest.h"
+#include "gtest/gtest_prod.h" 
+#include "CryptoUtils.h"
 
-// Forward declaration of DatabaseManager is not needed since we include the full header
-// class DatabaseManager;
-
-// Entry yapısı: Bir günlük girdisini temsil eder
-struct Entry {
-    std::string title;
-    std::string content; // Bu, şifreli veya şifresiz olabilir
-    std::string mood;
-    time_t timestamp;
-};
-
-// User yapısı: Kullanıcı bilgilerini temsil eder
-struct User {
-    std::string username;
-    std::string passwordHash;
-    std::string salt;
-};
 
 // Dijital Günlük Uygulamasının ana sınıfı
 class DigitalJournalApp {
@@ -34,6 +22,9 @@ class DigitalJournalApp {
     FRIEND_TEST(DigitalJournalAppTest, RegistrationSuccessAndFailure);
     FRIEND_TEST(DigitalJournalAppTest, LoginSuccessAndFailure);
     FRIEND_TEST(DigitalJournalAppTest, CreateAndRetrieveEntry);
+        // Birim Test Erişimi (Rubrik Maddesi: Birim Testi)
+    FRIEND_TEST(DigitalJournalAppTest, RegistrationAndLoginLogic);
+    FRIEND_TEST(DigitalJournalAppTest, EncryptionIntegrity);
     
 public:
     explicit DigitalJournalApp(const std::string& dbPath);

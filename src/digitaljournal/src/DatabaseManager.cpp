@@ -1,3 +1,5 @@
+/* src/digitaljournal/src/DatabaseManger.cpp */
+
 #include "DatabaseManager.h"
 #include "digitaljournal.h" // User ve Entry'nin tam tanımı için bu gereklidir!
 #include <iostream>

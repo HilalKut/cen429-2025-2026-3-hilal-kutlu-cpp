@@ -1,6 +1,8 @@
+/* src/digitaljournalapp/src/digitaljournalapp.cpp */
+
 #include "digitaljournal.h"
 #include "SecurityUtils.h"
-// #include "DatabaseManager.h" // Bu, digitaljournal.h içinde zaten include edildi. Tekrar gerek yok.
+#include "CryptoUtils.h"
 #include <iostream>
 #include <limits>
 #include <iomanip>
@@ -11,14 +13,6 @@
 #include <map>
 
 // --- Kriptografi Yardımcı Fonksiyonları ---
-
-std::string _simple_sha256_placeholder(const std::string& input) {
-    size_t hash = 0;
-    for (char c : input) {
-        hash = (hash * 31 + c);
-    }
-    return "hashed_" + std::to_string(hash);
-}
 
 std::string DigitalJournalApp::generateSalt() {
     std::random_device rd;
@@ -33,25 +27,16 @@ std::string DigitalJournalApp::generateSalt() {
 
 std::string DigitalJournalApp::hashPassword(const std::string& password, const std::string& salt) {
     std::string saltedPassword = password + salt;
-    return _simple_sha256_placeholder(saltedPassword);
+    return CryptoUtils::SHA256_Hash(saltedPassword); 
 }
 
+// Yeni encryptData:
 std::string DigitalJournalApp::encryptData(const std::string& data, const std::string& key) const {
-    std::string output = data;
-    if (key.empty()) return output;
-    for (size_t i = 0; i < data.size(); ++i) {
-        output[i] = data[i] ^ key[i % key.size()];
-    }
-    return output;
+    return CryptoUtils::AES_Encrypt_Simulated(data, key);
 }
-
+// Yeni decryptData:
 std::string DigitalJournalApp::decryptData(const std::string& encryptedData, const std::string& key) const {
-    std::string output = encryptedData;
-    if (key.empty()) return output;
-    for (size_t i = 0; i < encryptedData.size(); ++i) {
-        output[i] = encryptedData[i] ^ key[i % key.size()];
-    }
-    return output;
+    return CryptoUtils::AES_Decrypt_Simulated(encryptedData, key);
 }
 
 // --- Bellek Güvenliği ---
