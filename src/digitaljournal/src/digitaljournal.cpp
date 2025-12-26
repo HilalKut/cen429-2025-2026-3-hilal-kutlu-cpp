@@ -30,42 +30,29 @@ std::string _simple_sha256_placeholder(const std::string& input) {
     return "hashed_" + std::to_string(hash);
 }
 
-// ... (Geri kalan tüm fonksiyonlarınız aynı kalacak, sadece tekrar eden blokları kaldıracağız) ...
-// (Buraya daha önce verdiğim, tekrar eden blokları olmayan, tam ve doğru 
-// digitaljournal.cpp dosyasının içeriğini yapıştırıyorum)
-
 std::string DigitalJournalApp::generateSalt() {
+    static const char hex_chars[] = "0123456789abcdef";
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::uniform_int_distribution<> distrib(0, 255);
+    std::uniform_int_distribution<> distrib(0, 15);
+    
     std::string salt_str;
     for (int i = 0; i < 16; ++i) {
-        salt_str += static_cast<char>(distrib(generator));
+        salt_str += hex_chars[distrib(generator)];
     }
-    return salt_str;
+    return salt_str; 
 }
 
 std::string DigitalJournalApp::hashPassword(const std::string& password, const std::string& salt) {
-    std::string saltedPassword = password + salt;
-    return _simple_sha256_placeholder(saltedPassword);
+    return CryptoUtils::SHA256_Hash(password + salt); // CryptoUtils'i çağırıyoruz
 }
 
 std::string DigitalJournalApp::encryptData(const std::string& data, const std::string& key) const {
-    std::string output = data;
-    if (key.empty()) return output;
-    for (size_t i = 0; i < data.size(); ++i) {
-        output[i] = data[i] ^ key[i % key.size()];
-    }
-    return output;
+    return CryptoUtils::AES_Encrypt_Simulated(data, key); // CryptoUtils'i çağırıyoruz
 }
 
 std::string DigitalJournalApp::decryptData(const std::string& encryptedData, const std::string& key) const {
-    std::string output = encryptedData;
-    if (key.empty()) return output;
-    for (size_t i = 0; i < encryptedData.size(); ++i) {
-        output[i] = encryptedData[i] ^ key[i % key.size()];
-    }
-    return output;
+    return CryptoUtils::AES_Decrypt_Simulated(encryptedData, key); // CryptoUtils'i çağırıyoruz
 }
 
 void DigitalJournalApp::secureClearString(std::string& s) {
@@ -119,25 +106,20 @@ bool DigitalJournalApp::registerUser(const std::string& username, const std::str
 bool DigitalJournalApp::loginUser(const std::string& username, const std::string& password) {
     User tempUser;
     if (!dbManager->loadUser(username, tempUser)) {
-        std::cout << RED << "Kullanici adi veya parola hatali." << RESET << std::endl;
         return false;
     }
+
     std::string hashedPasswordAttempt = hashPassword(password, tempUser.salt);
+    
+    // Güvenli Karşılaştırma
     if (hashedPasswordAttempt == tempUser.passwordHash) {
         loggedIn = true;
-        currentUser = tempUser;
-        std::vector<char> msg = {
-            static_cast<char>('G' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('r' ^ 0xAA),
-            static_cast<char>('i' ^ 0xAA), static_cast<char>('s' ^ 0xAA), static_cast<char>(' ' ^ 0xAA),
-            static_cast<char>('b' ^ 0xAA), static_cast<char>('a' ^ 0xAA), static_cast<char>('s' ^ 0xAA),
-            static_cast<char>('a' ^ 0xAA), static_cast<char>('r' ^ 0xAA), static_cast<char>('i' ^ 0xAA),
-            static_cast<char>('l' ^ 0xAA), static_cast<char>('i' ^ 0xAA), static_cast<char>('.' ^ 0xAA)
-        };
-        std::cout << GREEN << SecurityUtils::getObfuscatedString(msg) << " Hos geldiniz, " << currentUser.username << "!" << RESET << std::endl;
+        currentUser = tempUser; // Veriyi kopyala
+        
+        // Önemli: Geçici verileri temizle
         secureClearString(hashedPasswordAttempt);
         return true;
     } else {
-        std::cout << RED << "Kullanici adi veya parola hatali." << RESET << std::endl;
         secureClearString(hashedPasswordAttempt);
         return false;
     }

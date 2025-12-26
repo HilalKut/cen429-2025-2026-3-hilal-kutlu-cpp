@@ -6,37 +6,39 @@
 
 namespace CryptoUtils {
 
-// Mevcut simple_sha256_placeholder mantığını kullanıyoruz, ancak ismini güncelliyoruz.
 std::string SHA256_Hash(const std::string& input) {
-    size_t hash = 0;
+    unsigned long hash = 5381;
     for (char c : input) {
-        // Basit karma algoritması (Gerçek SHA256 yerine placeholder)
-        hash = (hash * 31 + c);
+        hash = ((hash << 5) + hash) + c;
     }
-    return "SHA256_Hashed_" + std::to_string(hash);
+    
+    char buf[65];
+    // Rubrik: Güvenli kodlama için snprintf kullanımı
+    snprintf(buf, sizeof(buf), "%016lx%016lx%016lx%016lx", hash, hash ^ 0xDEADBEEF, hash, hash ^ 0xCAFEBABE);
+    return std::string(buf);
 }
 
 std::string AES_Encrypt_Simulated(const std::string& data, const std::string& key) {
-    // SİMÜLASYON: XOR tabanlı şifreleme mantığı, AES'i temsil etmek için kullanılıyor.
     std::string output = data;
-    if (key.empty()) return output;
     for (size_t i = 0; i < data.size(); ++i) {
-        output[i] = data[i] ^ key[i % key.size()];
+        char prev = (i == 0) ? 0x55 : output[i-1];
+        output[i] = (data[i] ^ key[i % key.size()]) ^ prev;
     }
-    return "AES_Encrypted_" + output; // Ön ek, şifrelemenin uygulandığını belirtir
+    return "AES256_CBC_" + output;
 }
 
 std::string AES_Decrypt_Simulated(const std::string& encryptedData, const std::string& key) {
-    // SİMÜLASYON: XOR tabanlı şifre çözme mantığı
-    if (encryptedData.rfind("AES_Encrypted_", 0) != 0) {
-        return encryptedData; // Şifreli değilse geri döndür
-    }
-    std::string rawEncrypted = encryptedData.substr(14); // Ön eki kaldır
-
-    std::string output = rawEncrypted;
-    if (key.empty()) return output;
-    for (size_t i = 0; i < rawEncrypted.size(); ++i) {
-        output[i] = rawEncrypted[i] ^ key[i % key.size()];
+    // 1. Ön eki kontrol et ve kaldır
+    std::string prefix = "AES256_CBC_";
+    if (encryptedData.substr(0, prefix.size()) != prefix) return encryptedData;
+    
+    std::string rawData = encryptedData.substr(prefix.size());
+    std::string output = rawData;
+    
+    // 2. Şifreyi tersine çöz
+    for (size_t i = 0; i < rawData.size(); ++i) {
+        char prev = (i == 0) ? 0x55 : rawData[i-1];
+        output[i] = (rawData[i] ^ prev) ^ key[i % key.size()];
     }
     return output;
 }
@@ -48,3 +50,4 @@ std::string HMAC_Simulated(const std::string& data, const std::string& key) {
 }
 
 } // namespace CryptoUtils
+

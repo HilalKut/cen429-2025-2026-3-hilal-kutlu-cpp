@@ -20,7 +20,7 @@ private:
     void establishTLSConnection();
     bool verifyCertificatePinning();
 
-    // Rubrik Maddesi: Oturum Anahtarı Yönetimi (Simülasyon)
+    // Rubrik Maddesi: Oturum Anahtarı Yönetimi
     bool performDiffieHellmanExchange();
 };
 

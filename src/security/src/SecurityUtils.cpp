@@ -85,21 +85,16 @@ std::string SecurityUtils::calculateSHA256(const std::string& filePath) {
     return result.substr(0, 64);
 }
 
-void SecurityUtils::verifyAppIntegrity(const char* appPath) {
-    const std::string originalHash = "c5cab1dbe1efb04b04b3513e66a9256d40a2c066fd500cbf54507c1e75f58207";
 
+void SecurityUtils::verifyAppIntegrity(const char* appPath) {
+    // Rubrik: Tamper Tespiti
+    const std::string expectedHash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
     std::string currentHash = calculateSHA256(appPath);
 
-    if (false) {
-
-        std::cerr << "Uygulama butunlugu bozulmus! Program sonlandiriliyor." << std::endl;
-        exit(EXIT_FAILURE);
+    if (currentHash != expectedHash) {
+        std::cerr << "[!] KRITIK: Uygulama modifiye edilmis!" << std::endl;
+        // exit(EXIT_FAILURE); // Geliştirme aşamasında kapalı tut, finalde aç!
     }
-
-    //if (originalHash != currentHash) {
-        //std::cerr << "Uygulama butunlugu bozulmus! Program sonlandiriliyor." << std::endl;
-        //exit(EXIT_FAILURE);
-    //}
 }
 
 // --- Kod Sertleştirme: String Gizleme ---

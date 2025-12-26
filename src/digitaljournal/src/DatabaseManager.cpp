@@ -1,7 +1,7 @@
 /* src/digitaljournal/src/DatabaseManger.cpp */
 
 #include "DatabaseManager.h"
-#include "digitaljournal.h" // User ve Entry'nin tam tanımı için bu gereklidir!
+#include "digitaljournal.h" 
 #include <iostream>
 
 DatabaseManager::DatabaseManager(const std::string& path) : dbPath(path), db(nullptr) {}
@@ -58,9 +58,9 @@ bool DatabaseManager::saveUser(const User& user) {
     std::string sql = "INSERT INTO Users (Username, PasswordHash, Salt) VALUES (?, ?, ?);";
     sqlite3_stmt* stmt = nullptr; // ÖNEMLİ: Pointer'ı null olarak ilklendir.
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0) == SQLITE_OK) {
-        sqlite3_bind_text(stmt, 1, user.username.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 2, user.passwordHash.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 3, user.salt.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 1, user.username.c_str(), -1, SQLITE_TRANSIENT); // STATIC -> TRANSIENT
+sqlite3_bind_text(stmt, 2, user.passwordHash.c_str(), -1, SQLITE_TRANSIENT);
+sqlite3_bind_text(stmt, 3, user.salt.c_str(), -1, SQLITE_TRANSIENT);
         
         bool success = (sqlite3_step(stmt) == SQLITE_DONE);
         if (!success) {
@@ -103,7 +103,7 @@ bool DatabaseManager::updateUserPassword(const std::string& username, const std:
             std::cerr << "Parola guncellenemedi: " << sqlite3_errmsg(db) << std::endl;
         }
         
-        sqlite3_finalize(stmt); // DÜZELTME: finalize() if bloğunun içine taşındı.
+        sqlite3_finalize(stmt); 
         return success;
     }
     return false;
@@ -113,18 +113,18 @@ bool DatabaseManager::saveEntry(const std::string& username, const Entry& entry)
     std::string sql = "INSERT INTO Entries (Username, Title, EncryptedContent, Mood, Timestamp) VALUES (?, ?, ?, ?, ?);";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0) == SQLITE_OK) {
-        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 2, entry.title.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 3, entry.content.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 4, entry.mood.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_int64(stmt, 5, entry.timestamp);
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
+sqlite3_bind_text(stmt, 2, entry.title.c_str(), -1, SQLITE_TRANSIENT);
+sqlite3_bind_text(stmt, 3, entry.content.c_str(), -1, SQLITE_TRANSIENT);
+sqlite3_bind_text(stmt, 4, entry.mood.c_str(), -1, SQLITE_TRANSIENT);
+sqlite3_bind_int64(stmt, 5, (sqlite3_int64)entry.timestamp); 
 
         bool success = (sqlite3_step(stmt) == SQLITE_DONE);
         if (!success) {
             std::cerr << "Giris kaydedilemedi: " << sqlite3_errmsg(db) << std::endl;
         }
 
-        sqlite3_finalize(stmt); // DÜZELTME: finalize() if bloğunun içine taşındı.
+        sqlite3_finalize(stmt); 
         return success;
     }
     return false;
